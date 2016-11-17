@@ -18,7 +18,7 @@ serverSocket.listen(1)
 
 #server can receive messages updating ruoting information 
 #server can receive questions asking where it would route a message
-
+#this is a dict of lists
 rtable = {'A' : [], 
 		  'B' : [], 
 		  'C' : [], 
@@ -29,6 +29,8 @@ rtable = {'A' : [],
 		  'H' : []
 		  }
 
+#rtable = []
+
 def parse_message(input):
 
 	words = input.split()
@@ -36,19 +38,34 @@ def parse_message(input):
 
 	if(words[0] == "UPDATE"):
 		print("it's an update")
-		check_update(input)
+		perform_update(input)
 
 	if(words[0] == "QUERY"):
 		print("it's a query")
 		#answer the query
 	
 
-	return
+	return 
 
-def check_update(input):
+def perform_update(input):
+	#example of update 
+	# UPDATE <cr><lf>
+	# A<sp>200.34.55.0/24<sp>22<cr><lf>
+	# A<sp>200.34.56.0/24<sp>22<cr><lf>
+	# B<sp>200.34.54.0/24<sp>35<cr><lf>
+	# C<sp>200.34.0.0/16<sp>41<cr><lf>
+	# END<cr><lf>
+	
+	#iterate over the input
+	for word in input:
+		rtable[input[1]] = [input[1]]
 
-	#do a bunch of stuff
-	return
+	response = "ACK\r\n"
+	response += "END\r\n"
+	
+	connectionSocket.send(response)
+
+	return 
 
 def receive_query():
 
@@ -59,5 +76,6 @@ while 1:
 	connectionSocket, addr = serverSocket.accept()
 	sentence = connectionSocket.recv(2048)
 	parse_message(sentence)
+	
 	#print(sentence)
 	connectionSocket.close()
