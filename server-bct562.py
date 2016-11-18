@@ -40,7 +40,7 @@ def parse_message(input):
 		perform_update(words)
 
 	if(words[0] == "QUERY"):
-		print("it's a query")
+		print("QUERY")
 		perform_query(words)
 		#answer the query
 	
@@ -79,6 +79,7 @@ def perform_query(words):
 	most_recent = -1
 	best_route = "Z"
 	longest_prefix = 0
+
 	print(rtable)
 	for router in rtable:
 		i = 0
@@ -89,28 +90,33 @@ def perform_query(words):
 			ipNet = ipaddress.ip_network((rtable[router])[i])
 			#print("comparing ip address " + str(ip) + " to " + str(ipNet))
 			if(ip in ipNet):
-				# print("the ip address is in subnet " + str(ipNet) + "\n")
-				if(int((rtable[router])[i + 1]) <= int(weight)):
-					if(longest_prefix < ipNet.prefixlen):
-						longest_prefix = ipNet.prefixlen
-						weight = rtable[router][i + 1]
-						best_route = str(router)
-				# if(int((rtable[router])[i + 1]) < int(weight)):
-				# 	# if(longest_prefix < ipNet.prefixlen):
+				print("the ip address is in subnet " + str(ipNet) + "\n")
+				# if(int((rtable[router])[i + 1]) <= int(weight)):
+				# 	if(longest_prefix < ipNet.prefixlen):
 				# 		longest_prefix = ipNet.prefixlen
 				# 		weight = rtable[router][i + 1]
 				# 		best_route = str(router)
-				# else: 
-				# 	if(int((rtable[router])[i + 1]) == int(weight)):
-				# 		if(longest_prefix < ipNet.prefixlen):
-				# 			longest_prefix = ipNet.prefixlen
-				# 			weight = rtable[router][i + 1]
-				# 			best_route = str(router)
-				# 		else: 
-				# 			if((rtable[router])[i + 2] > most_recent):
-				# 				weight = rtable[router][i + 1]
-				# 				best_route = str(router)
-				# 				most_recent = (rtable[router])[i + 2]
+				if(int((rtable[router])[i + 1]) < int(weight)):
+					longest_prefix = ipNet.prefixlen
+					weight = rtable[router][i + 1]
+					best_route = str(router)
+					last_ipNet = ipNet
+				else: 
+					if(int((rtable[router])[i + 1]) == int(weight)):
+						print("the weights are equal between " + best_route + " and " + str(router))
+						if(longest_prefix < ipNet.prefixlen):
+							print("taking the new longest prefix")
+							longest_prefix = ipNet.prefixlen
+							weight = rtable[router][i + 1]
+							best_route = str(router)
+							last_ipNet = ipNet
+						else: 
+							if(last_ipNet == ipNet and (rtable[router])[i + 2] > most_recent):
+								print("taking the most recent")
+								weight = rtable[router][i + 1]
+								best_route = str(router)
+								most_recent = (rtable[router])[i + 2]
+								last_ipNet = ipNet
 			i += 3
 
 	if(best_route == "Z"):
