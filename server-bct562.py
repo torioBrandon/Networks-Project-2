@@ -17,20 +17,18 @@ serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen(1)
 
-#server can receive messages updating ruoting information 
+#server can receive messages updating routing information 
 #server can receive questions asking where it would route a message
-#this is a dict of lists
-rtable = {'A' : ['0.0.0.0', 99], 
-		  'B' : ['0.0.0.0', 99], 
-		  'C' : ['0.0.0.0', 99], 
-		  'D' : ['0.0.0.0', 99],
-		  'E' : ['0.0.0.0', 99],
-		  'F' : ['0.0.0.0', 99],
-		  'G' : ['0.0.0.0', 99],
-		  'H' : ['0.0.0.0', 99]
+#routing table:
+rtable = {'A' : ['0.0.0.0', 99, 0], 
+		  'B' : ['0.0.0.0', 99, 0], 
+		  'C' : ['0.0.0.0', 99, 0], 
+		  'D' : ['0.0.0.0', 99, 0],
+		  'E' : ['0.0.0.0', 99, 0],
+		  'F' : ['0.0.0.0', 99, 0],
+		  'G' : ['0.0.0.0', 99, 0],
+		  'H' : ['0.0.0.0', 99, 0]
 		  }
-
-#rtable = []
 
 def parse_message(input):
 
@@ -60,10 +58,12 @@ def perform_update(words):
 	
 	#iterate over the input, update rtable accordingly 
 	i = 1
+	recent = 0
 	#print(len(words))
 	while i < (len(words) - 2):
-		rtable[words[i]] += [words[i+1], words[i + 2]]
+		rtable[words[i]] += [words[i+1], words[i + 2], recent]
 		#print(i)
+		recent += 1
 		i += 3
 	print (rtable)
 	response = "ACK\r\n"
@@ -75,22 +75,52 @@ def perform_update(words):
 
 def perform_query(words):
 	ip = ipaddress.ip_address(words[1])
-	weight = 0
-
+	weight = 100
+	most_recent = -1
+	best_route = "Z"
+	longest_prefix = 0
 	print(rtable)
 	for router in rtable:
 		i = 0
-		while i < len(router):
+		while i < len(rtable[router]) - 2:
+			#print(i)
+			# print(len(rtable[router]))
 			#if ip address is in this subnet
-			print(router[i])
-			ipNet = ipaddress.ip_network((rtable[router])[0])
+			ipNet = ipaddress.ip_network((rtable[router])[i])
+			#print("comparing ip address " + str(ip) + " to " + str(ipNet))
 			if(ip in ipNet):
-				print("the ip address is in subnet" + ipNet)
-				if(rtable[router[i + 1]] < weight):
-					weight = rtable[router[i + 1]]
-			i += 2
+				# print("the ip address is in subnet " + str(ipNet) + "\n")
+				if(int((rtable[router])[i + 1]) <= int(weight)):
+					if(longest_prefix < ipNet.prefixlen):
+						longest_prefix = ipNet.prefixlen
+						weight = rtable[router][i + 1]
+						best_route = str(router)
+				# if(int((rtable[router])[i + 1]) < int(weight)):
+				# 	# if(longest_prefix < ipNet.prefixlen):
+				# 		longest_prefix = ipNet.prefixlen
+				# 		weight = rtable[router][i + 1]
+				# 		best_route = str(router)
+				# else: 
+				# 	if(int((rtable[router])[i + 1]) == int(weight)):
+				# 		if(longest_prefix < ipNet.prefixlen):
+				# 			longest_prefix = ipNet.prefixlen
+				# 			weight = rtable[router][i + 1]
+				# 			best_route = str(router)
+				# 		else: 
+				# 			if((rtable[router])[i + 2] > most_recent):
+				# 				weight = rtable[router][i + 1]
+				# 				best_route = str(router)
+				# 				most_recent = (rtable[router])[i + 2]
+			i += 3
 
-
+	if(best_route == "Z"):
+		best_route = "A"
+	response = "RESULT\r\n"
+	response += str(ip)
+	response += " " + best_route + " " + str(weight) + "\r\n"
+	response += "END\r\n"
+	print(response)
+	connectionSocket.send(response.encode())
 	return
 
 
